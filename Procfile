@@ -1,1 +1,1 @@
-web: python3 -m uvicorn api:app --host 0.0.0.0 --port $PORT 
+web: pip install -r requirements-minimal.txt && python3 -m uvicorn api:app --host 0.0.0.0 --port $PORT 
