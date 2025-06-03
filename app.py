@@ -1,21 +1,30 @@
+import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Optional, List
-import os
-import json
+import uvicorn
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
+import json
 import logging
-import uvicorn
 
 # Set up logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Initialize FastAPI app
+app = FastAPI()
+
+# Configure CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Data models
 class QuestionRequest(BaseModel):
     question: str
 
@@ -25,18 +34,7 @@ class Answer(BaseModel):
     source_url: str
     source_title: str
 
-app = FastAPI()
-
-# Add CORS middleware with specific origins
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Load pre-computed embeddings
+# Global variables for data storage
 embeddings = None
 chunks = None
 chunk_metadata = None
@@ -62,6 +60,11 @@ async def startup_event():
     """Initialize resources on startup"""
     load_data()
 
+@app.get("/")
+async def root():
+    """Root endpoint for health check"""
+    return {"status": "healthy"}
+
 @app.post("/ask")
 async def answer_question(request: QuestionRequest):
     """Answer a question about the TDS course"""
@@ -79,7 +82,6 @@ async def answer_question(request: QuestionRequest):
             source_url="https://example.com",
             source_title="Test Source"
         )]
-        
     except Exception as e:
         logger.error(f"Error processing request: {str(e)}")
         raise HTTPException(
@@ -95,6 +97,18 @@ async def health_check():
         "system_ready": embeddings is not None and chunks is not None
     }
 
+# Server startup
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    uvicorn.run(app, host="0.0.0.0", port=port) 
+    # Get port from environment variable or use default
+    port = int(os.environ.get("PORT", 8000))
+    
+    # Log startup information
+    logger.info(f"Starting server on port {port}")
+    
+    # Run the server
+    uvicorn.run(
+        "app:app",
+        host="0.0.0.0",
+        port=port,
+        reload=False
+    ) 
