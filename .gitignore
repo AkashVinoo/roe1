@@ -19,12 +19,13 @@ build/
 uploads/
 logs/
 *.log
-tds_content.jsonl
 auth_config.json
 *.png
 *.jpg
 *.jpeg
 *.webp
+*.sqlite
+*.db
 
 # IDE
 .idea/
@@ -35,4 +36,10 @@ auth_config.json
 
 # OS
 .DS_Store
-Thumbs.db 
+Thumbs.db
+
+# Model files
+*.pt
+*.pth
+*.ckpt
+*.bin 
