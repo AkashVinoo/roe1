@@ -1,36 +1,37 @@
 import requests
 import json
 
-def test_qa_api():
-    url = "http://localhost:8000/api/"
-    headers = {"Content-Type": "application/json"}
-    
-    # Test question
+def test_api():
+    url = "https://tds-qa-api.onrender.com/ask"
+    headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+    }
     data = {
-        "question": "What is the uvx ngrok http 8000 command used for in the TDS course?"
+        "question": "What is TDS course about?"
     }
     
     try:
+        print("Testing API connection...")
         response = requests.post(url, headers=headers, json=data)
-        response.raise_for_status()  # Raise exception for non-200 status codes
+        print(f"Status Code: {response.status_code}")
         
-        # Pretty print the response
-        result = response.json()
-        print("\nQuestion:", data["question"])
-        print("\nAnswers:")
-        
-        for i, answer in enumerate(result["answers"], 1):
-            print(f"\n--- Answer {i} ---")
-            print(f"Answer: {answer['answer']}")
-            print(f"Confidence: {answer['similarity']:.2f}")
-            print(f"Source: {answer['source_title']}")
-            print(f"URL: {answer['source_url']}")
-            print(f"Context: {answer['context']}")
+        if response.status_code == 200:
+            print("\nAPI Response:")
+            answers = response.json()
+            for i, answer in enumerate(answers, 1):
+                print(f"\n--- Answer {i} ---")
+                print(f"Answer: {answer['answer']}")
+                print(f"Confidence: {answer['similarity']:.2f}")
+                print(f"Source: {answer['source_title']}")
+                print(f"URL: {answer['source_url']}")
+        else:
+            print(f"Error: {response.text}")
             
-    except requests.exceptions.RequestException as e:
-        print(f"Error making request: {str(e)}")
+    except requests.exceptions.ConnectionError:
+        print("Connection Error: The API server might be starting up or unavailable")
     except Exception as e:
         print(f"Error: {str(e)}")
 
 if __name__ == "__main__":
-    test_qa_api() 
+    test_api() 

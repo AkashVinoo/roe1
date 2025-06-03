@@ -19,24 +19,27 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-class Link(BaseModel):
-    url: str
-    text: str
-
 class QuestionRequest(BaseModel):
     question: str
-    image: Optional[str] = None  # base64 encoded image
 
-class QuestionResponse(BaseModel):
+class Answer(BaseModel):
     answer: str
-    links: List[Link] = []
+    similarity: float
+    source_url: str
+    source_title: str
 
 app = FastAPI()
 
-# Add CORS middleware
+# Add CORS middleware with specific origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://akashvinoo.github.io",  # GitHub Pages domain
+        "http://localhost:8000",         # Local development
+        "http://127.0.0.1:8000",        # Local development
+        "http://localhost:5500",         # Live Server extension
+        "http://127.0.0.1:5500",        # Live Server extension
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -62,39 +65,15 @@ def cleanup(signum, frame):
     logger.info("Received shutdown signal, cleaning up...")
     sys.exit(0)
 
-def save_and_analyze_image(base64_str: str) -> str:
-    """Save and analyze the image, returning any relevant text/context"""
-    try:
-        # Remove data URL prefix if present
-        if ',' in base64_str:
-            base64_str = base64_str.split(',')[1]
-        
-        # Decode base64 image
-        image_data = base64.b64decode(base64_str)
-        image = Image.open(io.BytesIO(image_data))
-        
-        # Save image for reference
-        os.makedirs('uploads', exist_ok=True)
-        image_path = os.path.join('uploads', f'question_image_{hash(str(image_data))}.png')
-        image.save(image_path)
-        
-        # TODO: Add OCR or image analysis here if needed
-        # For now, just return confirmation
-        return f"Image saved to {image_path}"
-        
-    except Exception as e:
-        logger.error(f"Error processing image: {str(e)}")
-        return None
-
 @app.on_event("startup")
 async def startup_event():
     """Initialize resources on startup"""
     init_qa_system()
 
-@app.post("/api/", response_model=QuestionResponse)
+@app.post("/ask")
 async def answer_question(request: QuestionRequest):
     """
-    Answer a question about the TDS course, optionally with an image
+    Answer a question about the TDS course
     """
     if qa_system is None:
         raise HTTPException(
@@ -103,38 +82,30 @@ async def answer_question(request: QuestionRequest):
         )
     
     try:
-        # Process image if provided
-        image_context = None
-        if request.image:
-            image_context = save_and_analyze_image(request.image)
-            logger.info(f"Image analysis result: {image_context}")
-        
         # Get answers from QA system
         answers = qa_system.get_answer(request.question)
         
         if not answers:
-            return QuestionResponse(
+            return [Answer(
                 answer="I could not find a relevant answer to your question.",
-                links=[]
+                similarity=0.0,
+                source_url="",
+                source_title=""
+            )]
+        
+        # Format all answers
+        formatted_answers = [
+            Answer(
+                answer=ans['answer'],
+                similarity=ans['similarity'],
+                source_url=ans['source_url'],
+                source_title=ans.get('source_title', ans['source_url'])
             )
+            for ans in answers
+            if ans['similarity'] > 0.2  # Only include relevant answers
+        ]
         
-        # Format the best answer
-        best_answer = answers[0]  # Assuming answers are sorted by relevance
-        
-        # Create response with main answer and relevant links
-        response = QuestionResponse(
-            answer=best_answer['answer'],
-            links=[
-                Link(
-                    url=ans['source_url'],
-                    text=ans['content'][:100] + "..."  # First 100 chars as preview
-                )
-                for ans in answers
-                if ans['similarity'] > 0.2  # Only include relevant links
-            ]
-        )
-        
-        return response
+        return formatted_answers
         
     except Exception as e:
         logger.error(f"Error processing request: {str(e)}")
@@ -143,7 +114,7 @@ async def answer_question(request: QuestionRequest):
             detail=f"Error processing request: {str(e)}"
         )
 
-@app.get("/api/health")
+@app.get("/health")
 async def health_check():
     """Check if the API is running and QA system is ready"""
     return {
@@ -162,5 +133,5 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=8000,
         log_level="info",
-        reload=False  # Disable auto-reload in production
+        reload=True  # Enable auto-reload for development
     ) 

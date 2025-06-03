@@ -90,7 +90,9 @@
 
     <script>
         // API Configuration
-        const API_URL = 'https://tds-qa-api.onrender.com'; // Production API URL
+        const API_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:8000'  // Local development
+            : 'https://YOUR-RAILWAY-APP-URL';  // Replace this with your Railway URL once deployed
         
         async function askQuestion() {
             const question = document.getElementById('question').value;
