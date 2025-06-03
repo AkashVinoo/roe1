@@ -7,6 +7,7 @@ import json
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 import logging
+import uvicorn
 
 # Set up logging
 logging.basicConfig(
@@ -92,4 +93,8 @@ async def health_check():
     return {
         "status": "healthy",
         "system_ready": embeddings is not None and chunks is not None
-    } 
+    }
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))
+    uvicorn.run(app, host="0.0.0.0", port=port) 

@@ -3,7 +3,7 @@ services:
     name: tds-qa-api
     env: python
     buildCommand: pip install -r requirements-minimal.txt
-    startCommand: python3 -m uvicorn api:app --host 0.0.0.0 --port $PORT
+    startCommand: python3 api.py
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.8 
