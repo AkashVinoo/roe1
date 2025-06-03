@@ -65,11 +65,12 @@
             </div>
         </div>
 
-        <div id="loading" class="text-center my-4">
+        <div id="loading" class="text-center my-4" style="display: none;">
             <div class="spinner-border text-primary" role="status">
                 <span class="visually-hidden">Loading...</span>
             </div>
-            <p class="mt-2">Finding the best answer...</p>
+            <p class="mt-2">Please wait while we process your question...</p>
+            <p class="text-muted small">First request may take 2-3 minutes as the server wakes up.</p>
         </div>
 
         <div id="answers"></div>
@@ -119,15 +120,12 @@
             } catch (error) {
                 console.error('Error:', error);
                 document.getElementById('answers').innerHTML = `
-                    <div class="alert alert-danger" role="alert">
-                        <h4 class="alert-heading">Connection Error</h4>
-                        <p>Unable to connect to the Q&A service. This might be because:</p>
-                        <ul>
-                            <li>The server is starting up (can take 1-2 minutes if it was inactive)</li>
-                            <li>There's a temporary connection issue</li>
-                        </ul>
+                    <div class="alert alert-info" role="alert">
+                        <h4 class="alert-heading">Server is Starting Up</h4>
+                        <p>The server is currently waking up from sleep mode (this is normal for free tier hosting).</p>
+                        <p>Please wait 2-3 minutes and try your question again.</p>
                         <hr>
-                        <p class="mb-0">Please wait a moment and try again. If the problem persists, please contact the administrator.</p>
+                        <p class="mb-0">If the problem persists after several minutes, please try refreshing the page.</p>
                     </div>
                 `;
             } finally {
