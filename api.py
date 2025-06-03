@@ -1,16 +1,12 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import base64
 from typing import Optional, List
 import os
-from project1 import QASystem
-import uvicorn
+import json
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
 import logging
-from PIL import Image
-import io
-import signal
-import sys
 
 # Set up logging
 logging.basicConfig(
@@ -33,80 +29,55 @@ app = FastAPI()
 # Add CORS middleware with specific origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://akashvinoo.github.io",  # GitHub Pages domain
-        "http://localhost:8000",         # Local development
-        "http://127.0.0.1:8000",        # Local development
-        "http://localhost:5500",         # Live Server extension
-        "http://127.0.0.1:5500",        # Live Server extension
-        "*",                            # Allow all origins in development
-    ],
+    allow_origins=["*"],  # Allow all origins
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Global QA system instance
-qa_system = None
+# Load pre-computed embeddings
+embeddings = None
+chunks = None
+chunk_metadata = None
 
-def init_qa_system():
-    """Initialize the QA system with error handling"""
-    global qa_system
+def load_data():
+    """Load pre-computed data"""
+    global embeddings, chunks, chunk_metadata
     try:
-        if qa_system is None:
-            qa_system = QASystem('tds_content.jsonl')
-            logger.info("QA system initialized successfully")
-    except FileNotFoundError:
-        logger.error("Content file not found. Please run the crawler first.")
+        with open('data/embeddings.npy', 'rb') as f:
+            embeddings = np.load(f)
+        with open('data/chunks.json', 'r') as f:
+            chunks = json.load(f)
+        with open('data/metadata.json', 'r') as f:
+            chunk_metadata = json.load(f)
+        logger.info("Data loaded successfully")
+        return True
     except Exception as e:
-        logger.error(f"Error initializing QA system: {str(e)}")
-
-def cleanup(signum, frame):
-    """Cleanup handler for graceful shutdown"""
-    logger.info("Received shutdown signal, cleaning up...")
-    sys.exit(0)
+        logger.error(f"Error loading data: {str(e)}")
+        return False
 
 @app.on_event("startup")
 async def startup_event():
     """Initialize resources on startup"""
-    init_qa_system()
+    load_data()
 
 @app.post("/ask")
 async def answer_question(request: QuestionRequest):
-    """
-    Answer a question about the TDS course
-    """
-    if qa_system is None:
+    """Answer a question about the TDS course"""
+    if embeddings is None or chunks is None:
         raise HTTPException(
             status_code=503,
-            detail="QA system is not initialized. Please ensure content has been crawled."
+            detail="System is not initialized. Please ensure data is loaded."
         )
     
     try:
-        # Get answers from QA system
-        answers = qa_system.get_answer(request.question)
-        
-        if not answers:
-            return [Answer(
-                answer="I could not find a relevant answer to your question.",
-                similarity=0.0,
-                source_url="",
-                source_title=""
-            )]
-        
-        # Format all answers
-        formatted_answers = [
-            Answer(
-                answer=ans['answer'],
-                similarity=ans['similarity'],
-                source_url=ans['source_url'],
-                source_title=ans.get('source_title', ans['source_url'])
-            )
-            for ans in answers
-            if ans['similarity'] > 0.2  # Only include relevant answers
-        ]
-        
-        return formatted_answers
+        # For now, return a test response
+        return [Answer(
+            answer="This is a test response. The system is working but needs to be configured with pre-computed embeddings.",
+            similarity=1.0,
+            source_url="https://example.com",
+            source_title="Test Source"
+        )]
         
     except Exception as e:
         logger.error(f"Error processing request: {str(e)}")
@@ -117,21 +88,8 @@ async def answer_question(request: QuestionRequest):
 
 @app.get("/health")
 async def health_check():
-    """Check if the API is running and QA system is ready"""
+    """Check if the API is running and system is ready"""
     return {
         "status": "healthy",
-        "qa_system_ready": qa_system is not None
-    }
-
-if __name__ == "__main__":
-    # Register signal handlers for graceful shutdown
-    signal.signal(signal.SIGINT, cleanup)
-    signal.signal(signal.SIGTERM, cleanup)
-    
-    # Start the server
-    uvicorn.run(
-        app,
-        host="0.0.0.0",
-        port=8000,
-        log_level="info"
-    ) 
+        "system_ready": embeddings is not None and chunks is not None
+    } 
