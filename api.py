@@ -39,6 +39,7 @@ app.add_middleware(
         "http://127.0.0.1:8000",        # Local development
         "http://localhost:5500",         # Live Server extension
         "http://127.0.0.1:5500",        # Live Server extension
+        "*",                            # Allow all origins in development
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -132,6 +133,5 @@ if __name__ == "__main__":
         app,
         host="0.0.0.0",
         port=8000,
-        log_level="info",
-        reload=True  # Enable auto-reload for development
+        log_level="info"
     ) 
