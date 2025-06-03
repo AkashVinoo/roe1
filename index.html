@@ -88,6 +88,9 @@
     </div>
 
     <script>
+        // API Configuration
+        const API_URL = 'https://tds-qa-api.onrender.com'; // Replace this with your Render URL when you have it
+        
         async function askQuestion() {
             const question = document.getElementById('question').value;
             if (!question) return;
@@ -97,13 +100,19 @@
             document.getElementById('answers').innerHTML = '';
 
             try {
-                const response = await fetch('https://tds-qa-api.onrender.com/ask', {
+                const response = await fetch(`${API_URL}/ask`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Accept': 'application/json',
                     },
+                    mode: 'cors',
                     body: JSON.stringify({ question: question })
                 });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
 
                 const data = await response.json();
                 displayAnswers(data);
@@ -111,7 +120,14 @@
                 console.error('Error:', error);
                 document.getElementById('answers').innerHTML = `
                     <div class="alert alert-danger" role="alert">
-                        Error: Could not get an answer. Please try again later.
+                        <h4 class="alert-heading">Connection Error</h4>
+                        <p>Unable to connect to the Q&A service. This might be because:</p>
+                        <ul>
+                            <li>The server is starting up (can take 1-2 minutes if it was inactive)</li>
+                            <li>There's a temporary connection issue</li>
+                        </ul>
+                        <hr>
+                        <p class="mb-0">Please wait a moment and try again. If the problem persists, please contact the administrator.</p>
                     </div>
                 `;
             } finally {
