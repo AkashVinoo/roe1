@@ -2,7 +2,7 @@ import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
 import uvicorn
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
@@ -31,11 +31,13 @@ class QuestionRequest(BaseModel):
     question: str
     image: Optional[str] = Field(None, description="Base64 encoded image file")
 
+class Link(BaseModel):
+    url: str
+    text: str
+
 class Answer(BaseModel):
     answer: str
-    similarity: float
-    source_url: str
-    source_title: str
+    links: List[Link]
 
 # Global variables for data storage
 embeddings = None
@@ -94,12 +96,19 @@ async def answer_question(request: QuestionRequest):
         if request.image:
             image_info = process_image(request.image)
 
-        # Return a single Answer object instead of a list
+        # Return response in the required format
         return Answer(
             answer=f"This is a test response from the deployed API. The system is working but using dummy data for testing. {image_info}",
-            similarity=1.0,
-            source_url="https://example.com",
-            source_title="Test Document"
+            links=[
+                Link(
+                    url="https://example.com/doc1",
+                    text="Example reference document 1"
+                ),
+                Link(
+                    url="https://example.com/doc2",
+                    text="Example reference document 2"
+                )
+            ]
         )
     except Exception as e:
         logger.error(f"Error processing request: {str(e)}")
