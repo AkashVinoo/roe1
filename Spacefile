@@ -1,0 +1,13 @@
+v: 0
+micros:
+  - name: tds-project
+    src: .
+    engine: python3.9
+    primary: true
+    public: true
+    presets:
+      env:
+        - name: ENVIRONMENT
+          default: production
+    commands:
+      - pip install -r requirements.txt 

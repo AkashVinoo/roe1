@@ -4,16 +4,34 @@ __pycache__/
 *$py.class
 *.so
 .Python
-.env
-.venv
 env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
 venv/
 ENV/
-env.bak/
-venv.bak/
-*.egg-info/
-dist/
-build/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Misc
+.DS_Store
 
 # Project specific
 uploads/
@@ -27,15 +45,7 @@ auth_config.json
 *.sqlite
 *.db
 
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-*~
-
 # OS
-.DS_Store
 Thumbs.db
 
 # Model files
