@@ -79,7 +79,7 @@ async def root():
     """Root endpoint for health check"""
     return {"status": "healthy"}
 
-@app.post("/")  # Changed to root path to match requirement
+@app.post("/")
 async def answer_question(request: QuestionRequest):
     """Answer a question about the TDS course, optionally with an image"""
     if embeddings is None or chunks is None:
@@ -94,13 +94,13 @@ async def answer_question(request: QuestionRequest):
         if request.image:
             image_info = process_image(request.image)
 
-        # Return a response using the dummy data
-        return [Answer(
+        # Return a single Answer object instead of a list
+        return Answer(
             answer=f"This is a test response from the deployed API. The system is working but using dummy data for testing. {image_info}",
             similarity=1.0,
             source_url="https://example.com",
             source_title="Test Document"
-        )]
+        )
     except Exception as e:
         logger.error(f"Error processing request: {str(e)}")
         raise HTTPException(
