@@ -1,12 +1,14 @@
 import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from typing import Optional
 import uvicorn
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 import json
 import logging
+import base64
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -27,6 +29,7 @@ app.add_middleware(
 # Data models
 class QuestionRequest(BaseModel):
     question: str
+    image: Optional[str] = Field(None, description="Base64 encoded image file")
 
 class Answer(BaseModel):
     answer: str
@@ -56,6 +59,16 @@ def load_data():
         logger.error(f"Error loading data: {str(e)}")
         return False
 
+def process_image(base64_image: str) -> str:
+    """Process the base64 encoded image and return relevant information"""
+    try:
+        # Decode base64 image (just logging for now)
+        logger.info("Received image attachment")
+        return "Image received and processed"
+    except Exception as e:
+        logger.error(f"Error processing image: {str(e)}")
+        return "Error processing image"
+
 @app.on_event("startup")
 async def startup_event():
     """Initialize resources on startup"""
@@ -66,9 +79,9 @@ async def root():
     """Root endpoint for health check"""
     return {"status": "healthy"}
 
-@app.post("/ask")
+@app.post("/")  # Changed to root path to match requirement
 async def answer_question(request: QuestionRequest):
-    """Answer a question about the TDS course"""
+    """Answer a question about the TDS course, optionally with an image"""
     if embeddings is None or chunks is None:
         raise HTTPException(
             status_code=503,
@@ -76,9 +89,14 @@ async def answer_question(request: QuestionRequest):
         )
     
     try:
+        # Process image if provided
+        image_info = ""
+        if request.image:
+            image_info = process_image(request.image)
+
         # Return a response using the dummy data
         return [Answer(
-            answer="This is a test response from the deployed API. The system is working but using dummy data for testing.",
+            answer=f"This is a test response from the deployed API. The system is working but using dummy data for testing. {image_info}",
             similarity=1.0,
             source_url="https://example.com",
             source_title="Test Document"
