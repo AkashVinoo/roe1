@@ -1,0 +1,22 @@
+name: DataDash Table Sum QA
+
+on:
+  workflow_dispatch:
+  push:
+
+jobs:
+  sum-tables:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install Playwright and dependencies
+        run: |
+          pip install playwright
+          playwright install chromium
+      - name: Run Table Sum QA (24f2000935@ds.study.iitm.ac.in)
+        run: python sum_tables.py 
