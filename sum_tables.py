@@ -29,7 +29,10 @@ def main():
                 html = table.inner_html()
                 grand_total += extract_numbers_from_table(html)
         browser.close()
-    print(f"GRAND TOTAL: {grand_total}")
+    # Print with clear markers
+    print(f"=== GRAND TOTAL SUM: {grand_total} ===")
+    # Print as GitHub Actions notice
+    print(f"::notice::GRAND TOTAL SUM: {grand_total}")
 
 if __name__ == "__main__":
     main() 
